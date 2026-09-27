@@ -1,0 +1,6 @@
+{
+  "name": "Cosmo Store",
+  "description": "Cosmo Game Store with native APK and XAPK installer, offline fallback, and web browser",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

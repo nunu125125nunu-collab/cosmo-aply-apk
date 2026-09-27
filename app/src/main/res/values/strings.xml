@@ -1,0 +1,52 @@
+<resources>
+    <string name="app_name">Cosmo Store</string>
+    
+    <!-- Navigation items -->
+    <string name="menu_browser">Browser</string>
+    <string name="menu_library">My library</string>
+    <string name="menu_update">Update</string>
+    <string name="menu_settings">Settings</string>
+    
+    <!-- Offline screen -->
+    <string name="offline_title">No Internet Connection</string>
+    <string name="offline_message">Unable to connect to Cosmo Game. Please verify your Wi-Fi or mobile data connection and try again.</string>
+    <string name="offline_retry">Retry Connection</string>
+    <string name="offline_open_settings">Network Settings</string>
+    
+    <!-- Library screen -->
+    <string name="library_title">Downloaded Packages</string>
+    <string name="library_empty_title">No downloads yet</string>
+    <string name="library_empty_desc">Files downloaded from the store will appear here ready to install or manage.</string>
+    <string name="library_install">Install</string>
+    <string name="library_delete">Delete</string>
+    <string name="library_installed">Installed</string>
+    
+    <!-- Update screen -->
+    <string name="update_title">App &amp; Engine Updates</string>
+    <string name="update_status_up_to_date">Cosmo Store is up to date</string>
+    <string name="update_check_button">Check for Updates</string>
+    <string name="update_refresh_store">Clear Cache &amp; Reload Store</string>
+    
+    <!-- Settings screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_general_header">General</string>
+    <string name="settings_start_page_title">Starting Homepage</string>
+    <string name="settings_start_page_desc">Default web URL loaded on app launch</string>
+    <string name="settings_download_header">Downloads &amp; Security</string>
+    <string name="settings_metered_title">Metered Connection Warning</string>
+    <string name="settings_metered_desc">Ask for confirmation before downloading on cellular data</string>
+    <string name="settings_warn_non_android_title">Warn on Non-Android Files</string>
+    <string name="settings_warn_non_android_desc">Alert when downloading files that are not .apk or .xapk</string>
+    <string name="settings_engine_header">Engine &amp; Diagnostics</string>
+    <string name="settings_engine_status_title">PackageInstaller Engine</string>
+    <string name="settings_engine_status_desc">Native split-APK and OBB session installer active</string>
+    <string name="settings_cache_title">Storage Cache</string>
+    <string name="settings_clear_cache">Clear Download Cache</string>
+    <string name="settings_version_title">App Version</string>
+    
+    <!-- Installer & Actions -->
+    <string name="installer_permission_title">Install Permission Required</string>
+    <string name="installer_permission_desc">To install downloaded games and updates, please allow Cosmo Store to install unknown apps in system settings.</string>
+    <string name="installer_grant">Grant Permission</string>
+    <string name="installer_cancel">Cancel</string>
+</resources>
