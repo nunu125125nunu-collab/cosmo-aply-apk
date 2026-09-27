@@ -14,9 +14,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag (default: latest-debug)"
+        description: "Release tag (default: v1.0.0)"
         required: false
-        default: "latest-debug"
+        default: "v1.0.0"
       is_draft:
         description: "Create as draft release"
         type: boolean
@@ -45,8 +45,13 @@ jobs:
           distribution: "temurin"
           cache: "gradle"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Configure Android SDK
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          if [ -d "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" ]; then
+            yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          fi
 
       - name: Prepare Secrets and Keystore
         run: |
@@ -62,7 +67,7 @@ jobs:
           if [ -f debug.keystore.base64 ]; then
             echo "Restoring debug.keystore from base64..."
             base64 -d debug.keystore.base64 > debug.keystore
-          else
+          elif [ ! -f debug.keystore ]; then
             echo "Generating new debug.keystore with keytool..."
             keytool -genkeypair -v -keystore debug.keystore -alias androiddebugkey \
               -keyalg RSA -keysize 2048 -validity 10000 \
@@ -74,7 +79,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Debug APK with Gradle
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Prepare APK Release Artifacts
         id: prepare_artifacts
@@ -104,17 +109,18 @@ jobs:
 
       - name: Publish or Update GitHub Release
         if: github.event_name != 'pull_request'
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'latest-debug') }}
-          name: "Cosmo Store Debug APK (${{ github.ref_type == 'tag' && github.ref_name || 'Latest Build' }})"
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'v1.0.0') }}
+          name: "Cosmo Store Debug APK (${{ github.ref_type == 'tag' && github.ref_name || 'v1.0.0' }})"
           body: |
             ## 🚀 Cosmo Store Android App (Debug Build)
 
             Directly download the freshly compiled debug APK for Cosmo Store below.
 
             ### 📦 Direct Downloads:
-            - **[Download APK: cosmo-store-debug.apk](https://github.com/nunu125125nunu-collab/cosmo-aply-apk/releases/download/${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'latest-debug') }}/cosmo-store-debug.apk)**
+            - **[Download APK: cosmo-store-debug.apk](https://github.com/nunu125125nunu-collab/cosmo-aply-apk/releases/download/${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'v1.0.0') }}/cosmo-store-debug.apk)**
             - **Checksum**: `cosmo-store-debug.apk.sha256`
 
             ### 📋 Build Information:
