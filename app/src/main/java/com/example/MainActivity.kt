@@ -201,6 +201,14 @@ class MainActivity : AppCompatActivity() {
     private fun setupWebView() {
         val webView = binding.webViewMain
 
+        // Use software rendering on the WebView component to prevent Mesa driver errors
+        // ("Failed to open rendernode: No such file or directory") in virtualized/container environments
+        try {
+            webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to set software layer on WebView", e)
+        }
+
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -299,6 +307,21 @@ class MainActivity : AppCompatActivity() {
                         showOfflineState()
                     }
                 }
+            }
+
+            override fun onRenderProcessGone(
+                view: WebView?,
+                detail: android.webkit.RenderProcessGoneDetail?
+            ): Boolean {
+                val didCrash = detail?.didCrash() ?: false
+                Log.w(TAG, "WebView render process exited (didCrash=$didCrash). Recovering with software rendering...")
+                try {
+                    view?.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+                    view?.reload()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to reload WebView after render process exit", e)
+                }
+                return true
             }
         }
 
