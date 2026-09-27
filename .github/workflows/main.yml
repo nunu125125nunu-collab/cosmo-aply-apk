@@ -1,0 +1,140 @@
+name: Build and Release Debug APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag (default: latest-debug)"
+        required: false
+        default: "latest-debug"
+      is_draft:
+        description: "Create as draft release"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-debug-apk:
+    name: Build & Package Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "gradle"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare Secrets and Keystore
+        run: |
+          echo "Setting up environment files and debug keystore..."
+          if [ ! -f .env ]; then
+            if [ -f .env.example ]; then
+              cp .env.example .env
+            else
+              touch .env
+            fi
+          fi
+
+          if [ -f debug.keystore.base64 ]; then
+            echo "Restoring debug.keystore from base64..."
+            base64 -d debug.keystore.base64 > debug.keystore
+          else
+            echo "Generating new debug.keystore with keytool..."
+            keytool -genkeypair -v -keystore debug.keystore -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Make Gradlew Executable
+        run: chmod +x gradlew
+
+      - name: Build Debug APK with Gradle
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Prepare APK Release Artifacts
+        id: prepare_artifacts
+        run: |
+          APK_SOURCE="app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$APK_SOURCE" ]; then
+            echo "ERROR: APK not found at $APK_SOURCE"
+            exit 1
+          fi
+
+          # Copy to cleanly named package
+          cp "$APK_SOURCE" cosmo-store-debug.apk
+
+          # Generate SHA256 checksum for verification
+          sha256sum cosmo-store-debug.apk > cosmo-store-debug.apk.sha256
+          echo "Generated SHA256: $(cat cosmo-store-debug.apk.sha256)"
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cosmo-store-debug-apk
+          path: |
+            cosmo-store-debug.apk
+            cosmo-store-debug.apk.sha256
+            app/build/outputs/apk/debug/output-metadata.json
+          retention-days: 30
+
+      - name: Publish or Update GitHub Release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'latest-debug') }}
+          name: "Cosmo Store Debug APK (${{ github.ref_type == 'tag' && github.ref_name || 'Latest Build' }})"
+          body: |
+            ## 🚀 Cosmo Store Android App (Debug Build)
+
+            Directly download the freshly compiled debug APK for Cosmo Store below.
+
+            ### 📦 Direct Downloads:
+            - **[Download APK: cosmo-store-debug.apk](https://github.com/nunu125125nunu-collab/cosmo-aply-apk/releases/download/${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'latest-debug') }}/cosmo-store-debug.apk)**
+            - **Checksum**: `cosmo-store-debug.apk.sha256`
+
+            ### 📋 Build Information:
+            - **Repository**: `nunu125125nunu-collab/cosmo-aply-apk`
+            - **Git Commit**: `${{ github.sha }}`
+            - **Git Ref**: `${{ github.ref }}`
+            - **Target Android SDK**: 36
+            - **Min Android SDK**: 24 (Android 7.0+)
+            - **Architecture Support**: universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`)
+
+            ### ✨ Core Features:
+            1. **Edge-to-Edge Store Experience**: Direct web core targeting `https://cosmo-game.pages.dev/` with offline recovery and pull-to-refresh.
+            2. **Background Download Manager**: Foreground service with pause, resume (HTTP Range header), and persistent notification progress bar.
+            3. **APK & XAPK Installer Engine**: Multi-split APK installation via Android PackageInstaller session and automatic OBB expansion extraction.
+            4. **My Library**: Local app installation tracking with Room Database and direct app launcher action.
+            5. **Custom Settings**: Theme switcher (Dark/Light/System), Wi-Fi Only/Mobile Data download selector, and Auto-Install behavior control.
+          files: |
+            cosmo-store-debug.apk
+            cosmo-store-debug.apk.sha256
+          draft: ${{ inputs.is_draft || false }}
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
